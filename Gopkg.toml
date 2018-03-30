@@ -1,0 +1,7 @@
+[[constraint]]
+  name = "github.com/acquia/http-hmac-go"
+  branch = "master"
+
+[[constraint]]
+  name = "github.com/satori/go.uuid"
+  branch = "master"

@@ -3,12 +3,17 @@ package main
 import (
 	"crypto/tls"
 	"crypto/x509"
+	"crypto/sha256"
+	"encoding/base64"
 	"io/ioutil"
 	"log"
 	"net/http"
 	"net/url"
 	"strings"
 	"sync"
+
+	"github.com/satori/go.uuid"
+	"github.com/acquia/http-hmac-go/signers/v2"
 )
 
 func StartClient(url_, heads, requestBody string, meth string, dka bool, responseChan chan *Response, waitGroup *sync.WaitGroup, tc int) {
@@ -66,6 +71,14 @@ func StartClient(url_, heads, requestBody string, meth string, dka bool, respons
 			}
 		}
 
+		// Sign the request if HMAC keys have been provided
+		if len(*hmacKey) > 0 &&  len(*hmacSecret) > 0 {
+			req, err = hmacSignRequest(req)
+			if err != nil {
+				log.Fatal(err)
+			}
+		}
+
 		timer.Reset()
 
 		resp, err := tr.RoundTrip(req)
@@ -95,3 +108,24 @@ func StartClient(url_, heads, requestBody string, meth string, dka bool, respons
 		responseChan <- respObj
 	}
 }
+
+func hmacSignRequest(req *http.Request) (*http.Request, error){
+	nonce, _ := uuid.NewV4();
+
+	AuthHeaders := map[string]string{
+		"realm":   *hmacRealm,
+		"id":      *hmacKey,
+		"nonce":   nonce.String(),
+		"version": "2.0",
+	}
+
+	encodedAccessSecret := base64.StdEncoding.EncodeToString([]byte(*hmacSecret))
+	signer, _ := v2.NewV2Signer(sha256.New)
+
+	if err := signer.SignDirect(req, AuthHeaders, encodedAccessSecret); err != nil {
+		return nil, err.ToError()
+	}
+
+	return req, nil
+}
+

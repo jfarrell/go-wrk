@@ -31,6 +31,9 @@ var (
 	keyFile           = flag.String("key", "someKeyFile", "A PEM encoded private key file.")
 	caFile            = flag.String("CA", "someCertCAFile", "A PEM eoncoded CA's certificate file.")
 	insecure          = flag.Bool("i", false, "TLS checks are disabled")
+	hmacKey           = flag.String("hmac-key", "", "HMAC key.")
+	hmacSecret        = flag.String("hmac-secret", "", "HMAC Secret.")
+	hmacRealm         = flag.String("hmac-realm", "", "HMAC Realm.")
 )
 
 func init() {
